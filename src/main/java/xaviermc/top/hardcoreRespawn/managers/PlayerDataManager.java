@@ -324,12 +324,12 @@ public class PlayerDataManager {
             return;
         }
 
-        // 设置最大生命值为2（1颗心）
-        player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(2.0);
+        // 设置最大生命值为1
+        player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(1.0);
 
         // 确保当前生命值不超过最大值
-        if (player.getHealth() > 2.0) {
-            player.setHealth(2.0);
+        if (player.getHealth() > 1.0) {
+            player.setHealth(1.0);
         }
 
         // 应用速度降低效果（如果启用）
@@ -367,7 +367,7 @@ public class PlayerDataManager {
                 restoreNormalHealth(player);
             } else {
                 // 保持一滴血模式，但恢复满血
-                player.setHealth(2.0);
+                player.setHealth(1.0);
             }
 
             player.sendMessage(getMessage("waiting_period_ended"));
@@ -409,7 +409,7 @@ public class PlayerDataManager {
             restoreNormalHealth(player);
         } else {
             // 保持一滴血模式，恢复满血
-            player.setHealth(2.0);
+            player.setHealth(1.0);
         }
 
         player.sendMessage(getMessage("skip_success")
