@@ -7,6 +7,7 @@ import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.attribute.Attribute;
 import xaviermc.top.hardcoreRespawn.HardcoreRespawn;
 import xaviermc.top.hardcoreRespawn.models.PlayerData;
 import xaviermc.top.hardcoreRespawn.utils.MessageUtils;
@@ -157,50 +158,6 @@ public class PlayerDataManager {
         }.runTaskTimerAsynchronously(plugin, 0L, 20L); // 每秒更新一次
     }
 
-    public void endWaitingPeriod(Player player) {
-        PlayerData data = playerDataMap.get(player.getUniqueId());
-        if (data != null) {
-            data.setWaiting(false);
-            data.setDeathTimestamp(0);
-            plugin.getDatabaseManager().savePlayerData(data);
-
-            // 恢复玩家状态
-            player.setGameMode(GameMode.SURVIVAL);
-            player.sendMessage(getMessage("waiting_period_ended"));
-        }
-    }
-
-    public boolean attemptSkip(Player player) {
-        PlayerData data = playerDataMap.get(player.getUniqueId());
-        if (data == null || !data.isWaiting()) {
-            player.sendMessage(getMessage("not_in_waiting_period"));
-            return true;
-        }
-
-        if (data.getRespawnCount() <= 0) {
-            player.sendMessage(getMessage("no_respawn_count"));
-            return true;
-        }
-
-        // 消耗一次复活次数
-        data.setRespawnCount(data.getRespawnCount() - 1);
-        data.setWaiting(false);
-        data.setDeathTimestamp(0);
-        plugin.getDatabaseManager().savePlayerData(data);
-
-        // 移除BossBar
-        if (activeBossBars.containsKey(player.getUniqueId())) {
-            activeBossBars.get(player.getUniqueId()).removeAll();
-            activeBossBars.remove(player.getUniqueId());
-        }
-
-        // 恢复玩家状态
-        player.setGameMode(GameMode.SURVIVAL);
-        player.sendMessage(getMessage("skip_success")
-                .replace("{count}", String.valueOf(data.getRespawnCount())));
-
-        return true;
-    }
 
     public void showInfo(Player player) {
         PlayerData data = playerDataMap.get(player.getUniqueId());
@@ -356,5 +313,108 @@ public class PlayerDataManager {
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 20 * 60 * 5, 20 * 60 * 5); // 每5分钟保存一次
+    }
+
+    /**
+     * 应用一滴血模式 - 将玩家最大生命值设置为2（1颗心）
+     * @param player 目标玩家
+     */
+    public void applyOneHeartMode(Player player) {
+        if (!plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+            return;
+        }
+
+        // 设置最大生命值为2（1颗心）
+        player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(2.0);
+
+        // 确保当前生命值不超过最大值
+        if (player.getHealth() > 2.0) {
+            player.setHealth(2.0);
+        }
+
+        // 应用速度降低效果（如果启用）
+        if (plugin.getConfig().getBoolean("settings.one_heart.speed_effect_enabled", false)) {
+            double speedReduction = plugin.getConfig().getDouble("settings.one_heart.speed_reduction", 0.2);
+            player.setWalkSpeed((float) (0.2 * (1 - speedReduction)));
+        }
+    }
+
+    /**
+     * 恢复玩家正常最大生命值（20点，10颗心）
+     * @param player 目标玩家
+     */
+    public void restoreNormalHealth(Player player) {
+        player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(20.0);
+        player.setHealth(20.0);
+        player.setWalkSpeed(0.2f);
+    }
+
+    /**
+     * 结束等待期时调用，可选择是否恢复生命值
+     */
+    public void endWaitingPeriod(Player player) {
+        PlayerData data = playerDataMap.get(player.getUniqueId());
+        if (data != null) {
+            data.setWaiting(false);
+            data.setDeathTimestamp(0);
+            plugin.getDatabaseManager().savePlayerData(data);
+
+            // 恢复玩家状态
+            player.setGameMode(GameMode.SURVIVAL);
+
+            // 如果一滴血模式已禁用，恢复最大生命值
+            if (!plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+                restoreNormalHealth(player);
+            } else {
+                // 保持一滴血模式，但恢复满血
+                player.setHealth(2.0);
+            }
+
+            player.sendMessage(getMessage("waiting_period_ended"));
+        }
+    }
+
+    /**
+     * 使用跳过命令时，同样处理生命值
+     */
+    public boolean attemptSkip(Player player) {
+        PlayerData data = playerDataMap.get(player.getUniqueId());
+        if (data == null || !data.isWaiting()) {
+            player.sendMessage(getMessage("not_in_waiting_period"));
+            return true;
+        }
+
+        if (data.getRespawnCount() <= 0) {
+            player.sendMessage(getMessage("no_respawn_count"));
+            return true;
+        }
+
+        // 消耗一次复活次数
+        data.setRespawnCount(data.getRespawnCount() - 1);
+        data.setWaiting(false);
+        data.setDeathTimestamp(0);
+        plugin.getDatabaseManager().savePlayerData(data);
+
+        // 移除BossBar
+        if (activeBossBars.containsKey(player.getUniqueId())) {
+            activeBossBars.get(player.getUniqueId()).removeAll();
+            activeBossBars.remove(player.getUniqueId());
+        }
+
+        // 恢复玩家状态
+        player.setGameMode(GameMode.SURVIVAL);
+
+        // 如果一滴血模式已禁用，恢复最大生命值
+        if (!plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+            restoreNormalHealth(player);
+        } else {
+            // 保持一滴血模式，恢复满血
+            player.setHealth(2.0);
+        }
+
+        player.sendMessage(getMessage("skip_success")
+                .replace("{count}", String.valueOf(data.getRespawnCount())));
+
+        return true;
     }
 }

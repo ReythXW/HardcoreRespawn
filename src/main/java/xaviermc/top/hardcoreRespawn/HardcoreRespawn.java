@@ -35,8 +35,10 @@ public class HardcoreRespawn extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MoveListener(this), this);
         getServer().getPluginManager().registerEvents(new JoinListener(this), this);
         getServer().getPluginManager().registerEvents(new EntityKillListener(this), this);
+        getServer().getPluginManager().registerEvents(new LowHealthListener(this), this); // 新增
 
         getLogger().info("HardcoreRespawn 插件已启用！");
+        getLogger().info("一滴血模式: " + getConfig().getBoolean("settings.one_heart.enabled", true));
     }
 
     @Override

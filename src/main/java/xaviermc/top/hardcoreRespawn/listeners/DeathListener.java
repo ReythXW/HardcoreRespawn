@@ -30,6 +30,11 @@ public class DeathListener implements Listener {
 
             // 设置为生存模式，让玩家复活
             player.setGameMode(GameMode.SURVIVAL);
+
+            // 应用一滴血模式（如果启用）
+            if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+                plugin.getPlayerDataManager().applyOneHeartMode(player);
+            }
         } else {
             // 没有复活次数，开始等待期
             Location spawnLocation = player.getWorld().getSpawnLocation();
@@ -37,6 +42,11 @@ public class DeathListener implements Listener {
             player.setGameMode(GameMode.ADVENTURE);
             player.setAllowFlight(false);
             player.setFlying(false);
+
+            // 应用一滴血模式（如果启用）
+            if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+                plugin.getPlayerDataManager().applyOneHeartMode(player);
+            }
 
             plugin.getPlayerDataManager().startWaitingPeriod(player);
 

@@ -2,7 +2,7 @@ name: HardcoreRespawn
 version: 1.0.0
 main: xaviermc.top.hardcoreRespawn.HardcoreRespawn
 api-version: '1.21'
-authors: CerealAxis
+authors: [CerealAxis]
 description: 硬核复活插件 - 为服务器添加硬核死亡惩罚机制
 
 commands:

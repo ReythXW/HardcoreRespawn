@@ -1,41 +1,5 @@
-# HardcoreRespawn 配置文件
-version: 1.0
-
-settings:
-  # 死亡等待时间（小时）
-  wait_time_hours: 24
-
-  # 一滴血模式 - 将玩家最大生命值永久限制为1颗心（2点生命值）
-  one_heart:
-    enabled: true                    # 是否启用一滴血模式
-    speed_reduction: 0.2             # 移动速度降低比例（20%）
-    speed_effect_enabled: false      # 是否应用速度降低效果
-    particle_effect: true            # 低血量时显示粒子效果
-    sound_effect: true               # 低血量时播放心跳音效
-    low_health_threshold: 1.0        # 触发低血量效果的阈值（生命值）
-
-  # BossBar 设置
-  bossbar:
-    enabled: true
-    color: RED
-    style: SOLID
-
-  # 出生点安全半径（格）
-  spawn_radius: 5
-
-  # 离线时是否继续倒计时
-  countdown_offline: true
-
-# 未来扩展：击杀生物获得次数
-rewards:
-  enabled: false
-  entities:
-    WANDERING_TRADER:
-      chance: 0.1  # 10% 概率
-      count: 1
-    PHANTOM:
-      chance: 0.2
-      count: 1
+# 这里可以单独配置消息，与config.yml合并
+# 如果在messages.yml中有相同键值的消息，将覆盖config.yml中的设置
 
 # 消息配置
 messages:
