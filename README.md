@@ -65,7 +65,19 @@ settings:
   # 离线时是否继续倒计时
   countdown_offline: true
 
-# 未来扩展：击杀生物获得次数
+  # 等待期指令白名单（等待期玩家只能使用这些指令）
+  # 注意：如果列表为空，则不限制任何指令（功能关闭）
+  # OP 玩家默认不受限制（需要 hardcorerespawn.bypass.commandlimit 权限）
+  command_whitelist:
+    - "msg"
+    - "tell"
+    - "r"
+    - "reply"
+    - "respawn"
+    - "hr"
+    - "hardcorerespawn"
+
+# 击杀生物获得次数
 rewards:
   enabled: false
   entities:
@@ -74,7 +86,7 @@ rewards:
       count: 1
     PHANTOM:
       chance: 0.2
-      count: 1
+
 
 # 消息配置
 messages:
@@ -98,7 +110,10 @@ messages:
   admin_reset_player: "§a管理员重置了你的等待状态！"
   admin_reset_player_console: "§a已重置玩家{player}的等待状态"
   player_not_found: "§c找不到该玩家！"
-  one_heart_applied: "§c一滴血模式已启用！你的最大生命值为1颗心"
+  one_heart_applied: "§c一滴血模式已启用！你的最大生命值为0.5颗心"
+  command_blocked: "&c等待期间无法使用此指令！"
+  still_in_waiting_period: "&c你仍在等待期，剩余时间：{time}"
+  bypass_enabled: "&e你拥有指令限制绕过权限"
 ```
 
 ---
