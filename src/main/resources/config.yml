@@ -26,7 +26,19 @@ settings:
   # 离线时是否继续倒计时
   countdown_offline: true
 
-# 未来扩展：击杀生物获得次数
+  # 等待期指令白名单（等待期玩家只能使用这些指令）
+  # 注意：如果列表为空，则不限制任何指令（功能关闭）
+  # OP 玩家默认不受限制（需要 hardcorerespawn.bypass.commandlimit 权限）
+  command_whitelist:
+    - "msg"
+    - "tell"
+    - "r"
+    - "reply"
+    - "respawn"
+    - "hr"
+    - "hardcorerespawn"
+
+# 击杀生物获得次数
 rewards:
   enabled: false
   entities:
@@ -36,20 +48,6 @@ rewards:
     PHANTOM:
       chance: 0.2
 
-  # 等待期指令白名单（等待期玩家只能使用这些指令）
-  # 注意：如果列表为空，则不限制任何指令（功能关闭）
-  # OP 玩家默认不受限制（需要 hardcorerespawn.bypass.commandlimit 权限）
-  command_whitelist:
-    - "msg"
-    - "tell"
-    - "r"
-    - "reply"
-    - "spawn"
-    - "respawn"
-    - "rules"
-    - "help"
-    - "hr"
-    - "hardcorerespawn"
 
 # 消息配置
 messages:
