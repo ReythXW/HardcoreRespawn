@@ -9,6 +9,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
 import xaviermc.top.hardcoreRespawn.HardcoreRespawn;
 
 public class JoinListener implements Listener {
@@ -63,5 +65,12 @@ public class JoinListener implements Listener {
                 }
             }, 20L);
         }
+    }
+
+    // 监听玩家退出事件，更新在线时间
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        plugin.getPlayerDataManager().onPlayerQuit(player);
     }
 }

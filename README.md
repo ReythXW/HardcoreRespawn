@@ -20,6 +20,11 @@
 - 数据基于 UUID 存储，玩家改名不影响
 - 击杀特定生物有概率获得复活次数
 - 支持配置掉落概率和数量
+- **在线时间累计奖励**：玩家每在线一定时间可获得复活次数
+  - 默认每 24 小时在线时间可获得 1 次复活机会
+  - 最多可叠加 3 次（可配置）
+  - 自动跟踪在线时间并发放奖励
+  - 支持查看剩余在线时间需求
 
 ---
 
@@ -77,6 +82,12 @@ settings:
     - "hr"
     - "hardcorerespawn"
 
+  # 在线时间累计复活次数设置
+  online_time_reward:
+    enabled: true                    # 是否启用在线时间奖励
+    required_hours: 24               # 累计获得一次复活机会所需的在线小时数
+    max_stacks: 3                    # 最多叠加的复活次数
+
 # 击杀生物获得次数
 rewards:
   enabled: false
@@ -125,7 +136,7 @@ messages:
 | 指令 | 权限 | 说明 |
 |------|------|------|
 | `/respawn` | 无 | 显示帮助信息 |
-| `/respawn info` | `hardcorerespawn.info` | 查看复活次数和冷却状态 |
+| `/respawn info` | `hardcorerespawn.info` | 查看复活次数、冷却状态和在线时间信息 |
 | `/respawn skip` | `hardcorerespawn.skip` | 消耗 1 次机会立即复活（等待期间可用） |
 
 #### 管理员指令
@@ -155,6 +166,7 @@ CREATE TABLE player_data (
     is_waiting BOOLEAN DEFAULT FALSE,
     wait_duration LONG DEFAULT 86400000,
     last_login LONG DEFAULT 0,
+    total_online_time LONG DEFAULT 0, -- 总在线时间（毫秒）
     created_at LONG DEFAULT (strftime('%s', 'now')),
     is_new_player BOOLEAN DEFAULT TRUE
 );

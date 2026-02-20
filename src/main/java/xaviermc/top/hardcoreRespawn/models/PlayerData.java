@@ -10,6 +10,7 @@ public class PlayerData {
     private boolean isWaiting;
     private long waitDuration;
     private long lastLogin;
+    private long totalOnlineTime; // 总在线时间（毫秒）
     private boolean isNewPlayer;
 
     public PlayerData(UUID uuid, String playerName) {
@@ -20,6 +21,7 @@ public class PlayerData {
         this.isWaiting = false;
         this.waitDuration = 24 * 60 * 60 * 1000; // 24小时默认
         this.lastLogin = System.currentTimeMillis();
+        this.totalOnlineTime = 0;
         this.isNewPlayer = true;
     }
 
@@ -44,6 +46,9 @@ public class PlayerData {
 
     public long getLastLogin() { return lastLogin; }
     public void setLastLogin(long lastLogin) { this.lastLogin = lastLogin; }
+
+    public long getTotalOnlineTime() { return totalOnlineTime; }
+    public void setTotalOnlineTime(long totalOnlineTime) { this.totalOnlineTime = totalOnlineTime; }
 
     public boolean isNewPlayer() { return isNewPlayer; }
     public void setNewPlayer(boolean newPlayer) { isNewPlayer = newPlayer; }

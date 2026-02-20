@@ -30,6 +30,7 @@ public class DatabaseManager {
                     is_waiting BOOLEAN DEFAULT FALSE,
                     wait_duration LONG DEFAULT 86400000, -- 24小时默认
                     last_login LONG DEFAULT 0,
+                    total_online_time LONG DEFAULT 0, -- 总在线时间（毫秒）
                     created_at LONG DEFAULT (strftime('%s', 'now')),
                     is_new_player BOOLEAN DEFAULT TRUE
                 )
@@ -60,6 +61,12 @@ public class DatabaseManager {
                 data.setWaiting(rs.getBoolean("is_waiting"));
                 data.setWaitDuration(rs.getLong("wait_duration"));
                 data.setLastLogin(rs.getLong("last_login"));
+                // 兼容旧数据库，检查是否存在 total_online_time 字段
+                try {
+                    data.setTotalOnlineTime(rs.getLong("total_online_time"));
+                } catch (SQLException e) {
+                    data.setTotalOnlineTime(0);
+                }
                 data.setNewPlayer(rs.getBoolean("is_new_player"));
                 return data;
             }
@@ -85,6 +92,12 @@ public class DatabaseManager {
                 data.setWaiting(rs.getBoolean("is_waiting"));
                 data.setWaitDuration(rs.getLong("wait_duration"));
                 data.setLastLogin(rs.getLong("last_login"));
+                // 兼容旧数据库，检查是否存在 total_online_time 字段
+                try {
+                    data.setTotalOnlineTime(rs.getLong("total_online_time"));
+                } catch (SQLException e) {
+                    data.setTotalOnlineTime(0);
+                }
                 data.setNewPlayer(rs.getBoolean("is_new_player"));
                 return data;
             }
@@ -99,8 +112,8 @@ public class DatabaseManager {
         try {
             String sql = """
                 INSERT OR REPLACE INTO player_data 
-                (uuid, player_name, respawn_count, death_timestamp, is_waiting, wait_duration, last_login, is_new_player)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (uuid, player_name, respawn_count, death_timestamp, is_waiting, wait_duration, last_login, total_online_time, is_new_player)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -111,7 +124,8 @@ public class DatabaseManager {
             stmt.setBoolean(5, data.isWaiting());
             stmt.setLong(6, data.getWaitDuration());
             stmt.setLong(7, data.getLastLogin());
-            stmt.setBoolean(8, data.isNewPlayer());
+            stmt.setLong(8, data.getTotalOnlineTime());
+            stmt.setBoolean(9, data.isNewPlayer());
 
             stmt.executeUpdate();
             stmt.close();

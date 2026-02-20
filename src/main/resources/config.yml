@@ -38,6 +38,12 @@ settings:
     - "hr"
     - "hardcorerespawn"
 
+  # 在线时间累计复活次数设置
+  online_time_reward:
+    enabled: true                    # 是否启用在线时间奖励
+    required_hours: 24               # 累计获得一次复活机会所需的在线小时数
+    max_stacks: 3                    # 最多叠加的复活次数
+
 # 击杀生物获得次数
 rewards:
   enabled: false

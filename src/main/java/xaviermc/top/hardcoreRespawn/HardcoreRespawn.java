@@ -27,6 +27,9 @@ public class HardcoreRespawn extends JavaPlugin {
 
         // 初始化数据管理器
         playerDataManager = new PlayerDataManager(this);
+        
+        // 启动在线时间检查任务
+        playerDataManager.startOnlineTimeCheckTask();
 
         // 注册命令和 TabCompleter
         RespawnCommand respawnCommand = new RespawnCommand(this);

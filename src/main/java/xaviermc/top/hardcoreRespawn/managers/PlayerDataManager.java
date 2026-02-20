@@ -33,7 +33,10 @@ public class PlayerDataManager {
             return plugin.getDatabaseManager().getPlayerData(player.getUniqueId());
         }).thenAccept(data -> {
             if (data != null) {
+                // 更新最后登录时间
+                data.setLastLogin(System.currentTimeMillis());
                 playerDataMap.put(player.getUniqueId(), data);
+                plugin.getDatabaseManager().savePlayerData(data);
             } else {
                 // 创建新玩家数据
                 PlayerData newData = new PlayerData(player.getUniqueId(), player.getName());
@@ -169,6 +172,15 @@ public class PlayerDataManager {
         player.sendMessage(MessageUtils.getColoredMessage("&a=== 复活信息 ==="));
         player.sendMessage(getMessage("info_respawn_count")
                 .replace("{count}", String.valueOf(data.getRespawnCount())));
+
+        // 显示在线时间信息
+        if (plugin.getConfig().getBoolean("settings.online_time_reward.enabled", true)) {
+            long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_hours", 24);
+            long totalHours = data.getTotalOnlineTime() / (60 * 60 * 1000);
+            long remainingHours = requiredHours - (totalHours % requiredHours);
+            player.sendMessage(MessageUtils.getColoredMessage("&a累计在线时间: " + totalHours + " 小时"));
+            player.sendMessage(MessageUtils.getColoredMessage("&a距离下次获得复活机会: " + remainingHours + " 小时"));
+        }
 
         if (data.isWaiting()) {
             long timeLeft = data.getTimeUntilRelease(System.currentTimeMillis());
@@ -313,6 +325,85 @@ public class PlayerDataManager {
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 20 * 60 * 5, 20 * 60 * 5); // 每5分钟保存一次
+    }
+
+    /**
+     * 启动在线时间检查任务
+     */
+    public void startOnlineTimeCheckTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // 遍历所有在线玩家
+                for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+                    PlayerData data = playerDataMap.get(player.getUniqueId());
+                    if (data != null) {
+                        // 更新在线时间
+                        updateOnlineTime(player);
+                        // 检查是否应该奖励复活次数
+                        checkOnlineTimeReward(player, data);
+                    }
+                }
+            }
+        }.runTaskTimerAsynchronously(plugin, 20 * 60, 20 * 60); // 每分钟检查一次
+    }
+
+    /**
+     * 更新玩家的在线时间
+     */
+    public void updateOnlineTime(org.bukkit.entity.Player player) {
+        PlayerData data = playerDataMap.get(player.getUniqueId());
+        if (data != null) {
+            long currentTime = System.currentTimeMillis();
+            long timeElapsed = currentTime - data.getLastLogin();
+            
+            // 只更新正数的时间差
+            if (timeElapsed > 0) {
+                data.setTotalOnlineTime(data.getTotalOnlineTime() + timeElapsed);
+                data.setLastLogin(currentTime);
+                plugin.getDatabaseManager().savePlayerData(data);
+            }
+        }
+    }
+
+    /**
+     * 检查并奖励在线时间对应的复活次数
+     */
+    public void checkOnlineTimeReward(org.bukkit.entity.Player player, PlayerData data) {
+        // 检查是否启用了在线时间奖励
+        if (!plugin.getConfig().getBoolean("settings.online_time_reward.enabled", true)) {
+            return;
+        }
+
+        // 获取配置的参数
+        long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_hours", 24);
+        int maxStacks = plugin.getConfig().getInt("settings.online_time_reward.max_stacks", 3);
+
+        // 计算所需的毫秒数
+        long requiredMillis = requiredHours * 60 * 60 * 1000;
+
+        // 计算当前应该有的复活次数
+        int currentRewards = (int) (data.getTotalOnlineTime() / requiredMillis);
+        
+        // 确保不超过最大叠加次数
+        int newRespawnCount = Math.min(currentRewards, maxStacks);
+
+        // 如果计算出的复活次数大于当前次数，则更新并通知玩家
+        if (newRespawnCount > data.getRespawnCount()) {
+            int addedCount = newRespawnCount - data.getRespawnCount();
+            data.setRespawnCount(newRespawnCount);
+            plugin.getDatabaseManager().savePlayerData(data);
+            
+            // 通知玩家获得了复活次数
+            player.sendMessage(org.bukkit.ChatColor.GREEN + "你累计在线 " + requiredHours + " 小时，获得了 " + addedCount + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
+        }
+    }
+
+    /**
+     * 玩家退出时调用，更新在线时间
+     */
+    public void onPlayerQuit(org.bukkit.entity.Player player) {
+        updateOnlineTime(player);
     }
 
     /**
