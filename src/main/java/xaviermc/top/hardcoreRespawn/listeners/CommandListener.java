@@ -1,4 +1,3 @@
-// src/main/java/xaviermc/top/hardcoreRespawn/listeners/CommandListener.java
 package xaviermc.top.hardcoreRespawn.listeners;
 
 import org.bukkit.entity.Player;

@@ -52,6 +52,11 @@ public class PlayerDataManager {
             data.setRespawnCount(3); // 给予初始3次复活机会
             data.setNewPlayer(false);
             plugin.getDatabaseManager().savePlayerData(data);
+            
+            // 新玩家首次加入时应用一滴血模式
+            if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+                applyOneHeartMode(player);
+            }
         }
     }
 
@@ -407,7 +412,7 @@ public class PlayerDataManager {
     }
 
     /**
-     * 应用一滴血模式 - 将玩家最大生命值设置为2（1颗心）
+     * 应用一滴血模式 - 将玩家最大生命值设置为1
      * @param player 目标玩家
      */
     public void applyOneHeartMode(Player player) {
@@ -494,7 +499,7 @@ public class PlayerDataManager {
         // 恢复玩家状态 - 设置为生存模式
         player.setGameMode(GameMode.SURVIVAL);
 
-        // 如果一滴血模式已启用，保持最大生命值为2
+        // 如果一滴血模式已启用，保持最大生命值为1
         if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
             applyOneHeartMode(player);
         } else {

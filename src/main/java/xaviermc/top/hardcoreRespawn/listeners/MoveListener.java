@@ -25,7 +25,7 @@ public class MoveListener implements Listener {
 
         if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
             Location spawnLocation = player.getWorld().getSpawnLocation();
-            double spawnRadius = plugin.getConfig().getDouble("settings.spawn_radius", 5.0);
+            double spawnRadius = plugin.getConfig().getDouble("settings.spawn_radius", 3.0);
 
             // 计算距离出生点的距离
             double distance = player.getLocation().distance(spawnLocation);
