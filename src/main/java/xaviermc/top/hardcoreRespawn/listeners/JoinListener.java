@@ -27,6 +27,11 @@ public class JoinListener implements Listener {
         // 加载玩家数据
         plugin.getPlayerDataManager().loadPlayerData(player);
 
+        // 检查玩家是否未登录，如果未登录则跳过所有限制
+        if (HardcoreRespawn.isPlayerLoggedOut(player)) {
+            return;
+        }
+
         // 应用一滴血模式（如果启用）
         if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
             plugin.getPlayerDataManager().applyOneHeartMode(player);
@@ -54,6 +59,11 @@ public class JoinListener implements Listener {
     @EventHandler
     public void onPlayerChangeWorld(PlayerChangedWorldEvent event) {
         Player player = event.getPlayer();
+
+        // 检查玩家是否未登录，如果未登录则跳过所有限制
+        if (HardcoreRespawn.isPlayerLoggedOut(player)) {
+            return;
+        }
 
         if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {

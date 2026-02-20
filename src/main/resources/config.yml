@@ -1,5 +1,5 @@
 # HardcoreRespawn 配置文件
-version: 1.0
+version: 2.0
 
 settings:
   # 死亡等待时间（小时）
@@ -37,12 +37,21 @@ settings:
     - "respawn"
     - "hr"
     - "hardcorerespawn"
+    - "hr skip"
+    - "hr info"
+    - "respawn skip"
+    - "respawn info"
+    - "hardcorerespawn skip"
+    - "hardcorerespawn info"
 
   # 在线时间累计复活次数设置
   online_time_reward:
     enabled: true                    # 是否启用在线时间奖励
     required_hours: 24               # 累计获得一次复活机会所需的在线小时数
     max_stacks: 3                    # 最多叠加的复活次数
+
+  # AuthMe 支持
+  authme_supported: false            # 是否启用 AuthMe 插件支持，启用后未登录玩家将不受限制
 
 # 击杀生物获得次数
 rewards:

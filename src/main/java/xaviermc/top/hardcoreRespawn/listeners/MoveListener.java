@@ -18,6 +18,11 @@ public class MoveListener implements Listener {
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
 
+        // 检查玩家是否未登录，如果未登录则跳过所有限制
+        if (HardcoreRespawn.isPlayerLoggedOut(player)) {
+            return;
+        }
+
         if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
             Location spawnLocation = player.getWorld().getSpawnLocation();
             double spawnRadius = plugin.getConfig().getDouble("settings.spawn_radius", 5.0);

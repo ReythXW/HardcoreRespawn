@@ -38,6 +38,25 @@ public class DatabaseManager {
 
             Statement stmt = connection.createStatement();
             stmt.execute(createTableSQL);
+            
+            // 检查并添加缺失的字段
+            // 检查total_online_time字段是否存在
+            ResultSet rs = stmt.executeQuery("PRAGMA table_info(player_data)");
+            boolean hasTotalOnlineTime = false;
+            while (rs.next()) {
+                if ("total_online_time".equals(rs.getString("name"))) {
+                    hasTotalOnlineTime = true;
+                    break;
+                }
+            }
+            rs.close();
+            
+            // 如果不存在total_online_time字段，添加它
+            if (!hasTotalOnlineTime) {
+                stmt.execute("ALTER TABLE player_data ADD COLUMN total_online_time LONG DEFAULT 0");
+                plugin.getLogger().info("已添加total_online_time字段到数据库表");
+            }
+            
             stmt.close();
 
             plugin.getLogger().info("数据库初始化成功！");

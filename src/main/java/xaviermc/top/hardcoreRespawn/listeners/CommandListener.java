@@ -21,6 +21,11 @@ public class CommandListener implements Listener {
     public void onPlayerCommand(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
 
+        // 检查玩家是否未登录，如果未登录则跳过所有限制
+        if (HardcoreRespawn.isPlayerLoggedOut(player)) {
+            return;
+        }
+
         // 检查玩家是否在等待期
         if (!plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
             return;
