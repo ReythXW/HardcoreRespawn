@@ -178,20 +178,20 @@ CREATE TABLE player_data (
 
 ```
 HardcoreRespawn/
-├── pom.xml
+├── build.gradle
 ├── src/main/java/xaviermc/top/hardcoreRespawn/
 │   ├── HardcoreRespawn.java          # 主类
 │   ├── commands/
 │   │   └── RespawnCommand.java       # 指令处理
 │   ├── listeners/
+│   │   ├── CommandListener.java      # 指令限制
 │   │   ├── DeathListener.java        # 死亡事件
 │   │   ├── MoveListener.java         # 移动限制
 │   │   ├── JoinListener.java         # 玩家加入
 │   │   ├── EntityKillListener.java   # 实体击杀奖励
 │   │   └── LowHealthListener.java    # 低血量效果
 │   ├── managers/
-│   │   ├── PlayerDataManager.java    # 玩家数据管理
-│   │   └── CooldownManager.java      # 冷却时间管理
+│   │   └── PlayerDataManager.java    # 玩家数据管理
 │   ├── database/
 │   │   └── DatabaseManager.java      # 数据库操作
 │   ├── utils/
