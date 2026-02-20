@@ -7,23 +7,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK 21 and cache Gradle
         uses: actions/setup-java@v4
         with:
+          distribution: temurin
           java-version: '21'
-          distribution: 'zulu'
-        
-      - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2.4.2
-      
-      - name: Execute Gradle build
-        run: ./gradlew build
+          cache: gradle
 
-      - uses: actions/upload-artifact@v4
+      - name: Ensure gradlew is executable
+        run: chmod +x ./gradlew
+
+      - name: Build (assemble and test)
+        run: ./gradlew clean build --no-daemon
+
+      - name: Upload built jar
+        uses: actions/upload-artifact@v4
         with:
-          name: Package JAR
-          path: build/libs
+          name: plugin-jar
+          path: build/libs/*.jar
+
