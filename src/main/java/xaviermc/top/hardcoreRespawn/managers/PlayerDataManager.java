@@ -36,7 +36,7 @@ public class PlayerDataManager {
                 // 更新最后登录时间
                 data.setLastLogin(System.currentTimeMillis());
                 // 检查离线期间是否需要恢复复活次数
-                checkOfflineRespawnRecovery(player, data);
+                //checkOfflineRespawnRecovery(player, data);
                 playerDataMap.put(player.getUniqueId(), data);
                 // 应用保存的生命值上限
                 applySavedMaxHealth(player, data);
@@ -386,7 +386,7 @@ public class PlayerDataManager {
                         // 检查是否应该奖励复活次数
                         checkOnlineTimeReward(player, data);
                         // 检查是否需要恢复复活次数（在线时也检查）
-                        checkOfflineRespawnRecovery(player, data);
+                        //checkOfflineRespawnRecovery(player, data);
                     }
                 }
             }
@@ -396,40 +396,41 @@ public class PlayerDataManager {
     /**
      * 检查离线期间是否需要恢复复活次数
      */
-    public void checkOfflineRespawnRecovery(org.bukkit.entity.Player player, PlayerData data) {
-        long currentTime = System.currentTimeMillis();
-        long lastRecovery = data.getLastRespawnRecovery();
-        long timeElapsed = currentTime - lastRecovery;
-        
-        // 24小时的毫秒数
-        long recoveryInterval = 24 * 60 * 60 * 1000;
-        
-        // 计算应该恢复的次数
-        int recoverCount = (int) (timeElapsed / recoveryInterval);
-        
-        if (recoverCount > 0) {
-            // 获取最大复活次数
-            int maxRespawnCount = 3;
-            
-            // 计算新的复活次数
-            int newRespawnCount = Math.min(data.getRespawnCount() + recoverCount, maxRespawnCount);
-            
-            if (newRespawnCount > data.getRespawnCount()) {
-                int actuallyRecovered = newRespawnCount - data.getRespawnCount();
-                data.setRespawnCount(newRespawnCount);
-                // 更新最后恢复时间
-                data.setLastRespawnRecovery(lastRecovery + (long) actuallyRecovered * recoveryInterval);
-                plugin.getDatabaseManager().savePlayerData(data);
-                
-                // 通知玩家
-                player.sendMessage(org.bukkit.ChatColor.GREEN + "你离线期间恢复了 " + actuallyRecovered + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
-            } else if (data.getRespawnCount() >= maxRespawnCount) {
-                // 如果已经达到最大次数，更新最后恢复时间
-                data.setLastRespawnRecovery(currentTime);
-                plugin.getDatabaseManager().savePlayerData(data);
-            }
-        }
-    }
+//    public void checkOfflineRespawnRecovery(org.bukkit.entity.Player player, PlayerData data) {
+//        long currentTime = System.currentTimeMillis();
+//        long lastRecovery = data.getLastRespawnRecovery();
+//        long timeElapsed = currentTime - lastRecovery;
+//        long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_time.hours", 24);
+//        long requiredMinutes = plugin.getConfig().getLong("settings.online_time_reward.required_time.minutes", 0);
+//        int maxStacks = plugin.getConfig().getInt("settings.online_time_reward.max_stacks", 3);
+//
+//        // 计算所需的毫秒数
+//        long requiredMillis = (requiredHours * 60 + requiredMinutes) * 60 * 1000;
+//
+//        // 计算应该恢复的次数
+//        int recoverCount = (int) (timeElapsed / requiredMillis);
+//
+//        if (recoverCount > 0) {
+//
+//            // 计算新的复活次数
+//            int newRespawnCount = Math.min(data.getRespawnCount() + recoverCount, maxStacks);
+//
+//            if (newRespawnCount > data.getRespawnCount()) {
+//                int actuallyRecovered = newRespawnCount - data.getRespawnCount();
+//                data.setRespawnCount(newRespawnCount);
+//                // 更新最后恢复时间
+//                data.setLastRespawnRecovery(lastRecovery + (long) actuallyRecovered * requiredMillis);
+//                plugin.getDatabaseManager().savePlayerData(data);
+//
+//                // 通知玩家
+//                player.sendMessage(org.bukkit.ChatColor.GREEN + "你离线期间恢复了 " + actuallyRecovered + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
+//            } else if (data.getRespawnCount() >= maxStacks) {
+//                // 如果已经达到最大次数，更新最后恢复时间
+//                data.setLastRespawnRecovery(currentTime);
+//                plugin.getDatabaseManager().savePlayerData(data);
+//            }
+//        }
+//    }
 
     /**
      * 更新玩家的在线时间
@@ -439,10 +440,16 @@ public class PlayerDataManager {
         if (data != null) {
             long currentTime = System.currentTimeMillis();
             long timeElapsed = currentTime - data.getLastLogin();
-            
+            int maxStacks = plugin.getConfig().getInt("settings.online_time_reward.max_stacks", 3);
             // 只更新正数的时间差
             if (timeElapsed > 0) {
-                data.setTotalOnlineTime(data.getTotalOnlineTime() + timeElapsed);
+                //只在复活次数未满时记录在线时长
+                if (data.getRespawnCount()<maxStacks){
+                    data.setTotalOnlineTime(data.getTotalOnlineTime() + timeElapsed);
+                }else{
+                    data.setTotalOnlineTime(0);
+                }
+                //无论在线时长是否变化，更新时间戳
                 data.setLastLogin(currentTime);
                 plugin.getDatabaseManager().savePlayerData(data);
             }
@@ -466,23 +473,10 @@ public class PlayerDataManager {
         // 计算所需的毫秒数
         long requiredMillis = (requiredHours * 60 + requiredMinutes) * 60 * 1000;
 
-        // 获取当前时间和上次获得奖励的时间
-        long currentTime = System.currentTimeMillis();
-        long lastRewardTime = data.getLastOnlineReward();
-        long timeElapsed = currentTime - lastRewardTime;
-
-        // 检查是否已经达到最大叠加次数
-        if (data.getRespawnCount() >= maxStacks) {
-            // 如果已经达到最大值，更新上次奖励时间以避免重复检查
-            data.setLastOnlineReward(currentTime);
-            plugin.getDatabaseManager().savePlayerData(data);
-            return;
-        }
-
         // 检查是否达到了获得奖励的时间
-        if (timeElapsed >= requiredMillis) {
+        if (data.getTotalOnlineTime() >= requiredMillis) {
             // 计算可以获得的奖励次数
-            int rewardCount = 1;
+            int rewardCount = plugin.getConfig().getInt("settings.online_time_reward.reward_counts", 1);
             
             // 计算新的复活次数，确保不超过最大值
             int newRespawnCount = Math.min(data.getRespawnCount() + rewardCount, maxStacks);
@@ -490,8 +484,6 @@ public class PlayerDataManager {
             if (newRespawnCount > data.getRespawnCount()) {
                 // 更新复活次数
                 data.setRespawnCount(newRespawnCount);
-                // 更新上次获得奖励的时间
-                data.setLastOnlineReward(currentTime);
                 plugin.getDatabaseManager().savePlayerData(data);
                 
                 // 通知玩家获得了复活次数
