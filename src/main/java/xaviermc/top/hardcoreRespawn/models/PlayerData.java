@@ -11,17 +11,21 @@ public class PlayerData {
     private long waitDuration;
     private long lastLogin;
     private long totalOnlineTime; // 总在线时间（毫秒）
+    private long lastOnlineReward; // 上次获得在线时间奖励的时间戳
+    private long lastRespawnRecovery; // 上次恢复复活次数的时间戳
     private boolean isNewPlayer;
 
     public PlayerData(UUID uuid, String playerName) {
         this.uuid = uuid;
         this.playerName = playerName;
-        this.respawnCount = 3; // 默认3次复活机会
+        this.respawnCount = 3; // 临时默认值，将在加载时被覆盖
         this.deathTimestamp = 0;
         this.isWaiting = false;
-        this.waitDuration = 24 * 60 * 60 * 1000; // 24小时默认
+        this.waitDuration = 24 * 60 * 60 * 1000; // 临时默认值，将在加载时被覆盖
         this.lastLogin = System.currentTimeMillis();
         this.totalOnlineTime = 0;
+        this.lastOnlineReward = System.currentTimeMillis(); // 初始化上次在线奖励时间为当前时间
+        this.lastRespawnRecovery = System.currentTimeMillis(); // 初始化上次恢复时间为当前时间
         this.isNewPlayer = true;
     }
 
@@ -49,6 +53,12 @@ public class PlayerData {
 
     public long getTotalOnlineTime() { return totalOnlineTime; }
     public void setTotalOnlineTime(long totalOnlineTime) { this.totalOnlineTime = totalOnlineTime; }
+
+    public long getLastOnlineReward() { return lastOnlineReward; }
+    public void setLastOnlineReward(long lastOnlineReward) { this.lastOnlineReward = lastOnlineReward; }
+
+    public long getLastRespawnRecovery() { return lastRespawnRecovery; }
+    public void setLastRespawnRecovery(long lastRespawnRecovery) { this.lastRespawnRecovery = lastRespawnRecovery; }
 
     public boolean isNewPlayer() { return isNewPlayer; }
     public void setNewPlayer(boolean newPlayer) { isNewPlayer = newPlayer; }

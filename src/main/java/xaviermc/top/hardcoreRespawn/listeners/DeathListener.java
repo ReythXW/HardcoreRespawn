@@ -40,8 +40,20 @@ public class DeathListener implements Listener {
             Location spawnLocation = player.getWorld().getSpawnLocation();
             player.teleport(spawnLocation);
 
-            // 设置为旁观者模式
-            player.setGameMode(GameMode.SPECTATOR);
+            // 设置为配置的等待游戏模式
+            int waitTimeMode = plugin.getConfig().getInt("settings.wait_time_mode", 3);
+            switch (waitTimeMode) {
+                case 0:
+                    player.setGameMode(GameMode.SURVIVAL);
+                    break;
+                case 2:
+                    player.setGameMode(GameMode.ADVENTURE);
+                    break;
+                case 3:
+                default:
+                    player.setGameMode(GameMode.SPECTATOR);
+                    break;
+            }
 
             // 应用一滴血模式（保持最大生命值为2）
             if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {

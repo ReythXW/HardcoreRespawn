@@ -35,13 +35,19 @@ public class PlayerDataManager {
             if (data != null) {
                 // 更新最后登录时间
                 data.setLastLogin(System.currentTimeMillis());
+                // 检查离线期间是否需要恢复复活次数
+                checkOfflineRespawnRecovery(player, data);
                 playerDataMap.put(player.getUniqueId(), data);
                 plugin.getDatabaseManager().savePlayerData(data);
+                // 应用保存的生命值上限
+                applySavedMaxHealth(player, data);
             } else {
                 // 创建新玩家数据
                 PlayerData newData = new PlayerData(player.getUniqueId(), player.getName());
                 playerDataMap.put(player.getUniqueId(), newData);
                 plugin.getDatabaseManager().savePlayerData(newData);
+                // 应用默认生命值上限
+                applySavedMaxHealth(player, newData);
             }
         });
     }
@@ -49,7 +55,8 @@ public class PlayerDataManager {
     public void initializeNewPlayer(Player player) {
         PlayerData data = playerDataMap.get(player.getUniqueId());
         if (data != null && data.isNewPlayer()) {
-            data.setRespawnCount(3); // 给予初始3次复活机会
+            int defaultRespawnCount = plugin.getConfig().getInt("settings.default_respawn_count", 3);
+            data.setRespawnCount(defaultRespawnCount); // 给予初始复活机会
             data.setNewPlayer(false);
             plugin.getDatabaseManager().savePlayerData(data);
             
@@ -89,8 +96,9 @@ public class PlayerDataManager {
     public void startWaitingPeriod(Player player) {
         PlayerData data = playerDataMap.get(player.getUniqueId());
         if (data != null) {
-            long waitTimeHours = plugin.getConfig().getLong("settings.wait_time_hours", 24);
-            long waitTimeMillis = waitTimeHours * 60 * 60 * 1000; // 转换为毫秒
+            long waitTimeHours = plugin.getConfig().getLong("settings.wait_time.hours", 24);
+            long waitTimeMinutes = plugin.getConfig().getLong("settings.wait_time.minutes", 0);
+            long waitTimeMillis = (waitTimeHours * 60 + waitTimeMinutes) * 60 * 1000; // 转换为毫秒
 
             data.setDeathTimestamp(System.currentTimeMillis());
             data.setWaiting(true);
@@ -177,14 +185,25 @@ public class PlayerDataManager {
         player.sendMessage(MessageUtils.getColoredMessage("&a=== 复活信息 ==="));
         player.sendMessage(getMessage("info_respawn_count")
                 .replace("{count}", String.valueOf(data.getRespawnCount())));
+        // 显示生命值上限信息
+        player.sendMessage(MessageUtils.getColoredMessage("&a生命值上限: " + data.getMaxHealth() + " (" + (data.getMaxHealth() / 2) + " 颗心)"));
 
         // 显示在线时间信息
         if (plugin.getConfig().getBoolean("settings.online_time_reward.enabled", true)) {
-            long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_hours", 24);
-            long totalHours = data.getTotalOnlineTime() / (60 * 60 * 1000);
-            long remainingHours = requiredHours - (totalHours % requiredHours);
-            player.sendMessage(MessageUtils.getColoredMessage("&a累计在线时间: " + totalHours + " 小时"));
-            player.sendMessage(MessageUtils.getColoredMessage("&a距离下次获得复活机会: " + remainingHours + " 小时"));
+            long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_time.hours", 24);
+            long requiredMinutes = plugin.getConfig().getLong("settings.online_time_reward.required_time.minutes", 0);
+            long requiredMillis = (requiredHours * 60 + requiredMinutes) * 60 * 1000;
+            
+            long totalMillis = data.getTotalOnlineTime();
+            long totalHours = totalMillis / (60 * 60 * 1000);
+            long totalMinutes = (totalMillis % (60 * 60 * 1000)) / (60 * 1000);
+            
+            long remainingMillis = requiredMillis - (totalMillis % requiredMillis);
+            long remainingHours = remainingMillis / (60 * 60 * 1000);
+            long remainingMinutes = (remainingMillis % (60 * 60 * 1000)) / (60 * 1000);
+            
+            player.sendMessage(MessageUtils.getColoredMessage("&a累计在线时间: " + totalHours + " 小时 " + totalMinutes + " 分钟"));
+            player.sendMessage(MessageUtils.getColoredMessage("&a距离下次获得复活机会: " + remainingHours + " 小时 " + remainingMinutes + " 分钟"));
         }
 
         if (data.isWaiting()) {
@@ -347,10 +366,50 @@ public class PlayerDataManager {
                         updateOnlineTime(player);
                         // 检查是否应该奖励复活次数
                         checkOnlineTimeReward(player, data);
+                        // 检查是否需要恢复复活次数（在线时也检查）
+                        checkOfflineRespawnRecovery(player, data);
                     }
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 20 * 60, 20 * 60); // 每分钟检查一次
+    }
+
+    /**
+     * 检查离线期间是否需要恢复复活次数
+     */
+    public void checkOfflineRespawnRecovery(org.bukkit.entity.Player player, PlayerData data) {
+        long currentTime = System.currentTimeMillis();
+        long lastRecovery = data.getLastRespawnRecovery();
+        long timeElapsed = currentTime - lastRecovery;
+        
+        // 24小时的毫秒数
+        long recoveryInterval = 24 * 60 * 60 * 1000;
+        
+        // 计算应该恢复的次数
+        int recoverCount = (int) (timeElapsed / recoveryInterval);
+        
+        if (recoverCount > 0) {
+            // 获取最大复活次数
+            int maxRespawnCount = 3;
+            
+            // 计算新的复活次数
+            int newRespawnCount = Math.min(data.getRespawnCount() + recoverCount, maxRespawnCount);
+            
+            if (newRespawnCount > data.getRespawnCount()) {
+                int actuallyRecovered = newRespawnCount - data.getRespawnCount();
+                data.setRespawnCount(newRespawnCount);
+                // 更新最后恢复时间
+                data.setLastRespawnRecovery(lastRecovery + (long) actuallyRecovered * recoveryInterval);
+                plugin.getDatabaseManager().savePlayerData(data);
+                
+                // 通知玩家
+                player.sendMessage(org.bukkit.ChatColor.GREEN + "你离线期间恢复了 " + actuallyRecovered + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
+            } else if (data.getRespawnCount() >= maxRespawnCount) {
+                // 如果已经达到最大次数，更新最后恢复时间
+                data.setLastRespawnRecovery(currentTime);
+                plugin.getDatabaseManager().savePlayerData(data);
+            }
+        }
     }
 
     /**
@@ -381,26 +440,44 @@ public class PlayerDataManager {
         }
 
         // 获取配置的参数
-        long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_hours", 24);
+        long requiredHours = plugin.getConfig().getLong("settings.online_time_reward.required_time.hours", 24);
+        long requiredMinutes = plugin.getConfig().getLong("settings.online_time_reward.required_time.minutes", 0);
         int maxStacks = plugin.getConfig().getInt("settings.online_time_reward.max_stacks", 3);
 
         // 计算所需的毫秒数
-        long requiredMillis = requiredHours * 60 * 60 * 1000;
+        long requiredMillis = (requiredHours * 60 + requiredMinutes) * 60 * 1000;
 
-        // 计算当前应该有的复活次数
-        int currentRewards = (int) (data.getTotalOnlineTime() / requiredMillis);
-        
-        // 确保不超过最大叠加次数
-        int newRespawnCount = Math.min(currentRewards, maxStacks);
+        // 获取当前时间和上次获得奖励的时间
+        long currentTime = System.currentTimeMillis();
+        long lastRewardTime = data.getLastOnlineReward();
+        long timeElapsed = currentTime - lastRewardTime;
 
-        // 如果计算出的复活次数大于当前次数，则更新并通知玩家
-        if (newRespawnCount > data.getRespawnCount()) {
-            int addedCount = newRespawnCount - data.getRespawnCount();
-            data.setRespawnCount(newRespawnCount);
+        // 检查是否已经达到最大叠加次数
+        if (data.getRespawnCount() >= maxStacks) {
+            // 如果已经达到最大值，更新上次奖励时间以避免重复检查
+            data.setLastOnlineReward(currentTime);
             plugin.getDatabaseManager().savePlayerData(data);
+            return;
+        }
+
+        // 检查是否达到了获得奖励的时间
+        if (timeElapsed >= requiredMillis) {
+            // 计算可以获得的奖励次数
+            int rewardCount = 1;
             
-            // 通知玩家获得了复活次数
-            player.sendMessage(org.bukkit.ChatColor.GREEN + "你累计在线 " + requiredHours + " 小时，获得了 " + addedCount + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
+            // 计算新的复活次数，确保不超过最大值
+            int newRespawnCount = Math.min(data.getRespawnCount() + rewardCount, maxStacks);
+            
+            if (newRespawnCount > data.getRespawnCount()) {
+                // 更新复活次数
+                data.setRespawnCount(newRespawnCount);
+                // 更新上次获得奖励的时间
+                data.setLastOnlineReward(currentTime);
+                plugin.getDatabaseManager().savePlayerData(data);
+                
+                // 通知玩家获得了复活次数
+                player.sendMessage(org.bukkit.ChatColor.GREEN + "你累计在线 " + requiredHours + " 小时 " + requiredMinutes + " 分钟 ，获得了 " + rewardCount + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
+            }
         }
     }
 
@@ -445,6 +522,81 @@ public class PlayerDataManager {
         player.setWalkSpeed(0.2f);
     }
 
+    public void applySavedMaxHealth(Player player, PlayerData data) {
+        if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+            // 如果一滴血模式启用，应用一滴血模式
+            applyOneHeartMode(player);
+        } else {
+            // 否则应用保存的生命值上限
+            player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(data.getMaxHealth());
+            // 确保当前生命值不超过最大值
+            if (player.getHealth() > data.getMaxHealth()) {
+                player.setHealth(data.getMaxHealth());
+            }
+        }
+    }
+
+    /**
+     * 为指定玩家应用保存的生命值上限
+     * @param player 目标玩家
+     */
+    public void applySavedMaxHealth(Player player) {
+        PlayerData data = playerDataMap.get(player.getUniqueId());
+        if (data != null) {
+            applySavedMaxHealth(player, data);
+        }
+    }
+
+    /**
+     * 应用保存的生命值上限
+     * @param player 目标玩家
+     * @param data 玩家数据
+     */
+    public void applySavedMaxHealth(Player player, PlayerData data) {
+        if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+            // 如果一滴血模式启用，应用一滴血模式
+            applyOneHeartMode(player);
+        } else {
+            // 否则应用保存的生命值上限
+            player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(data.getMaxHealth());
+            // 确保当前生命值不超过最大值
+            if (player.getHealth() > data.getMaxHealth()) {
+                player.setHealth(data.getMaxHealth());
+            }
+        }
+    }
+
+    /**
+     * 设置玩家的生命值上限
+     * @param player 目标玩家
+     * @param maxHealth 新的生命值上限
+     */
+    public void setMaxHealth(Player player, double maxHealth) {
+        PlayerData data = playerDataMap.get(player.getUniqueId());
+        if (data != null) {
+            data.setMaxHealth(maxHealth);
+            plugin.getDatabaseManager().savePlayerData(data);
+            // 应用新的生命值上限
+            if (!plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
+                player.getAttribute(Attribute.MAX_HEALTH).setBaseValue(maxHealth);
+                // 确保当前生命值不超过最大值
+                if (player.getHealth() > maxHealth) {
+                    player.setHealth(maxHealth);
+                }
+            }
+        }
+    }
+
+    /**
+     * 获取玩家的生命值上限
+     * @param player 目标玩家
+     * @return 生命值上限
+     */
+    public double getMaxHealth(Player player) {
+        PlayerData data = playerDataMap.get(player.getUniqueId());
+        return data != null ? data.getMaxHealth() : 20.0;
+    }
+
     /**
      * 结束等待期时调用
      */
@@ -458,11 +610,12 @@ public class PlayerDataManager {
             // 恢复玩家状态 - 设置为生存模式
             player.setGameMode(GameMode.SURVIVAL);
 
-            // 如果一滴血模式已启用，保持最大生命值为2
+            // 如果一滴血模式已启用，保持最大生命值为1
             if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
                 applyOneHeartMode(player);
             } else {
-                restoreNormalHealth(player);
+                // 应用保存的生命值上限
+                applySavedMaxHealth(player, data);
             }
 
             player.sendMessage(getMessage("waiting_period_ended"));
@@ -503,7 +656,8 @@ public class PlayerDataManager {
         if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
             applyOneHeartMode(player);
         } else {
-            restoreNormalHealth(player);
+            // 应用保存的生命值上限
+            applySavedMaxHealth(player, data);
         }
 
         player.sendMessage(getMessage("skip_success")

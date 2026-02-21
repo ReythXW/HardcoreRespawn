@@ -1,17 +1,22 @@
 # HardcoreRespawn 配置文件
-version: 2.0
+version: 3.0
 
 settings:
-  # 死亡等待时间（小时）
-  wait_time_hours: 24
+  # 默认复活次数
+  default_respawn_count: 3
+  
+  # 死亡等待时间
+  wait_time:
+    hours: 24               # 小时
+    minutes: 0              # 分钟
 
-  # 一滴血模式 - 将玩家最大生命值永久限制为1点生命值
+  # 一滴血模式
   one_heart:
     enabled: true                    # 是否启用一滴血模式
     speed_reduction: 0.2             # 移动速度降低比例（20%）
     speed_effect_enabled: false      # 是否应用速度降低效果
-    particle_effect: true            # 低血量时显示粒子效果
-    sound_effect: true               # 低血量时播放心跳音效
+    particle_effect: false            # 低血量时显示粒子效果
+    sound_effect: false               # 低血量时播放心跳音效
     low_health_threshold: 1.0        # 触发低血量效果的阈值（生命值）
 
   # BossBar 设置
@@ -22,6 +27,9 @@ settings:
 
   # 出生点安全半径（格）
   spawn_radius: 5
+
+  # 死亡等待时的游戏模式(0:survival/2:adventure/3:spectator)
+  wait_time_mode: 3
 
   # 离线时是否继续倒计时
   countdown_offline: true
@@ -47,7 +55,9 @@ settings:
   # 在线时间累计复活次数设置
   online_time_reward:
     enabled: true                    # 是否启用在线时间奖励
-    required_hours: 24               # 累计获得一次复活机会所需的在线小时数
+    required_time:
+      hours: 24               # 小时
+      minutes: 0              # 分钟
     max_stacks: 3                    # 最多叠加的复活次数
 
   # AuthMe 支持

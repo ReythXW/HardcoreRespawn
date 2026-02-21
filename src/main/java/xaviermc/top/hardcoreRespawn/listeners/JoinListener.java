@@ -32,10 +32,11 @@ public class JoinListener implements Listener {
             return;
         }
 
-        // 应用一滴血模式（如果启用）
-        if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
-            plugin.getPlayerDataManager().applyOneHeartMode(player);
-        }
+        // 应用生命值设置
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            // 加载玩家数据后应用生命值设置
+            plugin.getPlayerDataManager().loadPlayerData(player);
+        }, 10L);
 
         // 检查玩家是否在等待期
         if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
@@ -65,16 +66,30 @@ public class JoinListener implements Listener {
             return;
         }
 
-        if (plugin.getConfig().getBoolean("settings.one_heart.enabled", true)) {
-            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                plugin.getPlayerDataManager().applyOneHeartMode(player);
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            // 应用生命值设置
+            PlayerData data = plugin.getPlayerDataManager().playerDataMap.get(player.getUniqueId());
+            if (data != null) {
+                plugin.getPlayerDataManager().applySavedMaxHealth(player, data);
+            }
 
-                // 如果在等待期，保持旁观者模式
-                if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
-                    player.setGameMode(GameMode.SPECTATOR);
+            // 如果在等待期，保持配置的等待游戏模式
+            if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
+                int waitTimeMode = plugin.getConfig().getInt("settings.wait_time_mode", 3);
+                switch (waitTimeMode) {
+                    case 0:
+                        player.setGameMode(GameMode.SURVIVAL);
+                        break;
+                    case 2:
+                        player.setGameMode(GameMode.ADVENTURE);
+                        break;
+                    case 3:
+                    default:
+                        player.setGameMode(GameMode.SPECTATOR);
+                        break;
                 }
-            }, 20L);
-        }
+            }
+        }, 20L);
     }
 
     // 监听玩家退出事件，更新在线时间

@@ -31,6 +31,8 @@ public class DatabaseManager {
                     wait_duration LONG DEFAULT 86400000, -- 24小时默认
                     last_login LONG DEFAULT 0,
                     total_online_time LONG DEFAULT 0, -- 总在线时间（毫秒）
+                    last_respawn_recovery LONG DEFAULT 0, -- 上次恢复复活次数的时间戳
+                    max_health DOUBLE DEFAULT 20.0, -- 生命值上限
                     created_at LONG DEFAULT (strftime('%s', 'now')),
                     is_new_player BOOLEAN DEFAULT TRUE
                 )
@@ -43,20 +45,29 @@ public class DatabaseManager {
             // 检查total_online_time字段是否存在
             ResultSet rs = stmt.executeQuery("PRAGMA table_info(player_data)");
             boolean hasTotalOnlineTime = false;
+            boolean hasLastRespawnRecovery = false;
             while (rs.next()) {
-                if ("total_online_time".equals(rs.getString("name"))) {
+                String columnName = rs.getString("name");
+                if ("total_online_time".equals(columnName)) {
                     hasTotalOnlineTime = true;
-                    break;
+                } else if ("last_respawn_recovery".equals(columnName)) {
+                    hasLastRespawnRecovery = true;
                 }
             }
             rs.close();
-            
+
             // 如果不存在total_online_time字段，添加它
             if (!hasTotalOnlineTime) {
                 stmt.execute("ALTER TABLE player_data ADD COLUMN total_online_time LONG DEFAULT 0");
                 plugin.getLogger().info("已添加total_online_time字段到数据库表");
             }
-            
+
+            // 如果不存在last_respawn_recovery字段，添加它
+            if (!hasLastRespawnRecovery) {
+                stmt.execute("ALTER TABLE player_data ADD COLUMN last_respawn_recovery LONG DEFAULT 0");
+                plugin.getLogger().info("已添加last_respawn_recovery字段到数据库表");
+            }
+
             stmt.close();
 
             plugin.getLogger().info("数据库初始化成功！");
@@ -85,6 +96,12 @@ public class DatabaseManager {
                     data.setTotalOnlineTime(rs.getLong("total_online_time"));
                 } catch (SQLException e) {
                     data.setTotalOnlineTime(0);
+                }
+                // 兼容旧数据库，检查是否存在 last_respawn_recovery 字段
+                try {
+                    data.setLastRespawnRecovery(rs.getLong("last_respawn_recovery"));
+                } catch (SQLException e) {
+                    data.setLastRespawnRecovery(System.currentTimeMillis());
                 }
                 data.setNewPlayer(rs.getBoolean("is_new_player"));
                 return data;
@@ -117,6 +134,12 @@ public class DatabaseManager {
                 } catch (SQLException e) {
                     data.setTotalOnlineTime(0);
                 }
+                // 兼容旧数据库，检查是否存在 last_respawn_recovery 字段
+                try {
+                    data.setLastRespawnRecovery(rs.getLong("last_respawn_recovery"));
+                } catch (SQLException e) {
+                    data.setLastRespawnRecovery(System.currentTimeMillis());
+                }
                 data.setNewPlayer(rs.getBoolean("is_new_player"));
                 return data;
             }
@@ -131,8 +154,8 @@ public class DatabaseManager {
         try {
             String sql = """
                 INSERT OR REPLACE INTO player_data 
-                (uuid, player_name, respawn_count, death_timestamp, is_waiting, wait_duration, last_login, total_online_time, is_new_player)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (uuid, player_name, respawn_count, death_timestamp, is_waiting, wait_duration, last_login, total_online_time, last_respawn_recovery, is_new_player)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -144,7 +167,8 @@ public class DatabaseManager {
             stmt.setLong(6, data.getWaitDuration());
             stmt.setLong(7, data.getLastLogin());
             stmt.setLong(8, data.getTotalOnlineTime());
-            stmt.setBoolean(9, data.isNewPlayer());
+            stmt.setLong(9, data.getLastRespawnRecovery());
+            stmt.setBoolean(10, data.isNewPlayer());
 
             stmt.executeUpdate();
             stmt.close();
