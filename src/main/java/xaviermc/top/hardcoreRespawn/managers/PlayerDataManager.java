@@ -35,8 +35,6 @@ public class PlayerDataManager {
             if (data != null) {
                 // 更新最后登录时间
                 data.setLastLogin(System.currentTimeMillis());
-                // 检查离线期间是否需要恢复复活次数
-                checkOfflineRespawnRecovery(player, data);
                 playerDataMap.put(player.getUniqueId(), data);
                 // 应用保存的生命值上限
                 applySavedMaxHealth(player, data);
@@ -384,51 +382,11 @@ public class PlayerDataManager {
                         // 更新在线时间
                         updateOnlineTime(player);
                         // 检查是否应该奖励复活次数
-                        checkOnlineTimeReward(player, data);
-                        // 检查是否需要恢复复活次数（在线时也检查）
-                        checkOfflineRespawnRecovery(player, data);
+                        checkOnlineTimeReward(player, data);;
                     }
                 }
             }
         }.runTaskTimerAsynchronously(plugin, 20 * 60, 20 * 60); // 每分钟检查一次
-    }
-
-    /**
-     * 检查离线期间是否需要恢复复活次数
-     */
-    public void checkOfflineRespawnRecovery(org.bukkit.entity.Player player, PlayerData data) {
-        long currentTime = System.currentTimeMillis();
-        long lastRecovery = data.getLastRespawnRecovery();
-        long timeElapsed = currentTime - lastRecovery;
-        
-        // 24小时的毫秒数
-        long recoveryInterval = 24 * 60 * 60 * 1000;
-        
-        // 计算应该恢复的次数
-        int recoverCount = (int) (timeElapsed / recoveryInterval);
-        
-        if (recoverCount > 0) {
-            // 获取最大复活次数
-            int maxRespawnCount = 3;
-            
-            // 计算新的复活次数
-            int newRespawnCount = Math.min(data.getRespawnCount() + recoverCount, maxRespawnCount);
-            
-            if (newRespawnCount > data.getRespawnCount()) {
-                int actuallyRecovered = newRespawnCount - data.getRespawnCount();
-                data.setRespawnCount(newRespawnCount);
-                // 更新最后恢复时间
-                data.setLastRespawnRecovery(lastRecovery + (long) actuallyRecovered * recoveryInterval);
-                plugin.getDatabaseManager().savePlayerData(data);
-                
-                // 通知玩家
-                player.sendMessage(org.bukkit.ChatColor.GREEN + "你离线期间恢复了 " + actuallyRecovered + " 次复活机会！当前剩余: " + newRespawnCount + " 次");
-            } else if (data.getRespawnCount() >= maxRespawnCount) {
-                // 如果已经达到最大次数，更新最后恢复时间
-                data.setLastRespawnRecovery(currentTime);
-                plugin.getDatabaseManager().savePlayerData(data);
-            }
-        }
     }
 
     /**
