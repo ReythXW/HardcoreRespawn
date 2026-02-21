@@ -46,12 +46,15 @@ public class DatabaseManager {
             ResultSet rs = stmt.executeQuery("PRAGMA table_info(player_data)");
             boolean hasTotalOnlineTime = false;
             boolean hasLastRespawnRecovery = false;
+            boolean hasMaxHealth = false;
             while (rs.next()) {
                 String columnName = rs.getString("name");
                 if ("total_online_time".equals(columnName)) {
                     hasTotalOnlineTime = true;
                 } else if ("last_respawn_recovery".equals(columnName)) {
                     hasLastRespawnRecovery = true;
+                } else if ("max_health".equals(columnName)) {
+                    hasMaxHealth = true;
                 }
             }
             rs.close();
@@ -66,6 +69,12 @@ public class DatabaseManager {
             if (!hasLastRespawnRecovery) {
                 stmt.execute("ALTER TABLE player_data ADD COLUMN last_respawn_recovery LONG DEFAULT 0");
                 plugin.getLogger().info("已添加last_respawn_recovery字段到数据库表");
+            }
+
+            // 如果不存在max_health字段，添加它
+            if (!hasMaxHealth) {
+                stmt.execute("ALTER TABLE player_data ADD COLUMN max_health DOUBLE DEFAULT 20.0");
+                plugin.getLogger().info("已添加max_health字段到数据库表");
             }
 
             stmt.close();
