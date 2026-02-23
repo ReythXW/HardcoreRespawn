@@ -8,6 +8,7 @@ import xaviermc.top.hardcoreRespawn.managers.PlayerDataManager;
 import xaviermc.top.hardcoreRespawn.database.DatabaseManager;
 import xaviermc.top.hardcoreRespawn.utils.MessageUtils;
 
+import javax.swing.*;
 import java.util.List;
 
 public class HardcoreRespawn extends JavaPlugin {
@@ -21,6 +22,7 @@ public class HardcoreRespawn extends JavaPlugin {
 
         // 初始化配置文件
         checkConfigVersion();
+        checkMessageConfigVersion();
         MessageUtils.loadMessages();
 
         // 初始化数据库
@@ -173,4 +175,77 @@ public class HardcoreRespawn extends JavaPlugin {
             getLogger().info(MessageUtils.getLogMessage("log_config_updated", "version", defaultVersion));
         }
     }
+
+    /**
+     * 检查消息文件版本，如果版本不匹配则替换为默认配置
+     */
+    private void checkMessageConfigVersion() {
+        // 保存默认消息配置文件到插件目录（如果不存在）
+        if (!getDataFolder().toPath().resolve("messages.yml").toFile().exists()) {
+            saveResource("messages.yml", false);
+        }
+        
+        // 获取当前消息配置文件的版本
+        String currentVersion = "0.0";
+        try {
+            java.io.File messagesFile = new java.io.File(getDataFolder(), "messages.yml");
+            org.bukkit.configuration.file.FileConfiguration messagesConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(messagesFile);
+            currentVersion = messagesConfig.getString("version", "0.0");
+        } catch (Exception e) {
+            getLogger().severe(MessageUtils.getLogMessage("log_config_load_error", "error", e.getMessage()));
+            e.printStackTrace();
+            return;
+        }
+        
+        // 获取默认消息配置文件的版本
+        String defaultVersion = "0.0";
+        try {
+            // 获取默认消息配置文件资源
+            java.io.InputStream resourceStream = getResource("messages.yml");
+            if (resourceStream != null) {
+                org.bukkit.configuration.file.FileConfiguration defaultConfig = org.bukkit.configuration.file.YamlConfiguration.loadConfiguration(
+                        new java.io.InputStreamReader(resourceStream)
+                );
+                defaultVersion = defaultConfig.getString("version", "0.0");
+                resourceStream.close();
+            } else {
+                getLogger().severe(MessageUtils.getLogMessage("log_message_resource_error"));
+                return;
+            }
+        } catch (Exception e) {
+            getLogger().severe(MessageUtils.getLogMessage("log_message_load_error", "error", e.getMessage()));
+            e.printStackTrace();
+            return;
+        }
+        
+        // 比较版本
+        if (!currentVersion.equals(defaultVersion)) {
+            
+            // 重命名旧消息配置文件为messages-old.yml
+            java.io.File oldMessagesFile = new java.io.File(getDataFolder(), "messages.yml");
+            java.io.File backupMessagesFile = new java.io.File(getDataFolder(), "messages-old.yml");
+            
+            // 如果备份文件已存在，先删除
+            if (backupMessagesFile.exists()) {
+                backupMessagesFile.delete();
+            }
+            
+            if (oldMessagesFile.exists()) {
+                if (!oldMessagesFile.renameTo(backupMessagesFile)) {
+                getLogger().severe(MessageUtils.getLogMessage("log_message_rename_error"));
+                return;
+            }
+            getLogger().info(MessageUtils.getLogMessage("log_message_backup"));
+            }
+            
+            // 保存新的默认消息配置文件
+            saveResource("messages.yml", false);
+
+            getLogger().warning(MessageUtils.getLogMessage("log_message_version_mismatch", "current", currentVersion, "default", defaultVersion));
+            getLogger().warning(MessageUtils.getLogMessage("log_message_replaced", "current", currentVersion, "default", defaultVersion));
+            
+            getLogger().info(MessageUtils.getLogMessage("log_config_updated", "version", defaultVersion));
+        }
+    }
+
 }

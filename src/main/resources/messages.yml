@@ -1,4 +1,6 @@
-# 消息配置
+# HardcoreRespawn 消息配置
+version: 2.0
+
 messages:
   # 基础消息
   respawn_used: "§a你使用了一次复活机会！剩余次数: {count}"
@@ -67,6 +69,13 @@ messages:
   log_config_resource_error: "无法获取默认配置文件资源！"
   log_config_load_error: "加载默认配置文件时出错: {error}"
   log_config_rename_error: "无法重命名旧配置文件！"
+  log_message_version_mismatch: "检测到消息配置文件版本不匹配！当前版本: {current}, 默认版本: {default}"
+  log_message_replaced: "正在替换为默认消息配置文件..."
+  log_message_backup: "旧消息配置文件已备份为: messages-old.yml"
+  log_message_updated: "消息配置文件已更新至版本: {version}"
+  log_message_resource_error: "无法获取默认消息配置文件资源！"
+  log_message_load_error: "加载默认消息配置文件时出错: {error}"
+  log_message_rename_error: "无法重命名旧消息配置文件！"
   log_authme_not_found: "AuthMe插件未找到或API调用失败，默认视为玩家已登录"
   log_database_initialized: "数据库初始化成功！"
   log_database_init_failed: "数据库初始化失败: {error}"
