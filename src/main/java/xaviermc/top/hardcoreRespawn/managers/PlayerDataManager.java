@@ -43,6 +43,21 @@ public class PlayerDataManager {
                 if (player.getHealth() != data.getMaxHealth()) {
                     player.setHealth(data.getMaxHealth());
                 }
+                
+                // 检查玩家是否处于等待状态
+                if (data.isWaiting()) {
+                    long currentTime = System.currentTimeMillis();
+                    long timeLeft = data.getTimeUntilRelease(currentTime);
+                    
+                    if (timeLeft <= 0) {
+                        // 等待时间已过，结束等待期
+                        endWaitingPeriod(player);
+                    } else {
+                        // 等待时间未过，恢复等待期
+                        resumeWaitingPeriod(player);
+                    }
+                }
+                
                 // 保存玩家数据（包括可能从旧数据库更新的生命值上限）
                 plugin.getDatabaseManager().savePlayerData(data);
             } else {
@@ -123,6 +138,8 @@ public class PlayerDataManager {
             data.setWaitDuration(waitTimeMillis);
             plugin.getDatabaseManager().savePlayerData(data);
 
+            // 设置等待期游戏模式
+            setWaitTimeGameMode(player);
             createBossBar(player);
         }
     }
@@ -130,8 +147,32 @@ public class PlayerDataManager {
     public void resumeWaitingPeriod(Player player) {
         PlayerData data = playerDataMap.get(player.getUniqueId());
         if (data != null && data.isWaiting()) {
+            // 设置等待期游戏模式
+            setWaitTimeGameMode(player);
             createBossBar(player);
         }
+    }
+    
+    // 设置等待期的游戏模式
+    private void setWaitTimeGameMode(Player player) {
+        int gameModeId = plugin.getConfig().getInt("settings.wait_time_mode", 3);
+        GameMode gameMode;
+        
+        switch (gameModeId) {
+            case 0:
+                gameMode = GameMode.SURVIVAL;
+                break;
+            case 2:
+                gameMode = GameMode.ADVENTURE;
+                break;
+            case 3:
+                gameMode = GameMode.SPECTATOR;
+                break;
+            default:
+                gameMode = GameMode.SPECTATOR;
+        }
+        
+        player.setGameMode(gameMode);
     }
 
     private void createBossBar(Player player) {
