@@ -62,7 +62,9 @@ public class DeathListener implements Listener {
 
             plugin.getPlayerDataManager().startWaitingPeriod(player);
 
-            player.sendMessage(plugin.getPlayerDataManager().getMessage("death_penalty_started"));
+            player.sendMessage(plugin.getPlayerDataManager().getMessage("death_penalty_started")
+                    .replace("{hours}", String.valueOf(plugin.getConfig().getInt("settings.wait_time.hours", 24)))
+                    .replace("{minutes}", String.valueOf(plugin.getConfig().getInt("settings.wait_time.minutes", 0))));
         }
 
         // 防止掉落物品

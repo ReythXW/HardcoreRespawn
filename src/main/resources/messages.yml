@@ -2,7 +2,7 @@
 messages:
   # 基础消息
   respawn_used: "§a你使用了一次复活机会！剩余次数: {count}"
-  death_penalty_started: "§c你已经用完了所有复活机会，将在出生点等待24小时才能复活！"
+  death_penalty_started: "§c你已经用完了所有复活机会，将在出生点等待{hours}小时{minutes}分钟才能复活！"
   movement_restricted: "§c你正在等待期，不能离开出生点区域！"
   not_in_waiting_period: "§c你不在等待期！"
   no_respawn_count: "§c你没有足够的复活次数来跳过等待！"
