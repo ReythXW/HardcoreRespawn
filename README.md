@@ -2,7 +2,9 @@
 
 ![Minecraft 1.21](https://img.shields.io/badge/Minecraft-1.21-green?style=for-the-badge&logo=minecraft)  ![Paper 1.21](https://img.shields.io/badge/Paper-1.21-blue?style=for-the-badge&logo=paper) ![Java 21](https://img.shields.io/badge/Java-21-orange?style=for-the-badge&logo=java) ![GitHub Issues](https://img.shields.io/github/issues/Xavier-MC/HardcoreRespawn?style=for-the-badge) ![GPL](https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge)
 
-**HardcoreRespawn** 是一款专为硬核生存服务器设计的 Bukkit 插件，为核心玩家提供更具挑战性的死亡惩罚机制。插件采用 **一滴血模式** + **复活次数系统** + **死亡等待期** 三重机制，让每一次死亡都充满意义。
+[中文](README.md) | [English](README_EN.md)
+
+**HardcoreRespawn** 是一款专为硬核生存服务器设计的 Bukkit 插件，为核心玩家提供更具挑战性的死亡惩罚机制。插件采用 **一滴血模式** + **复活次数系统** + **死亡等待期** 三重机制，让每一次死亡都充满意义。支持多语言。
 
 
 ### 插件功能
@@ -10,15 +12,14 @@
 - 玩家最大生命值永久限制为 **1 点生命值**（可配置）
 - 复活次数用尽后进入 **24 小时等待期**（可配置）
 - 等待期间：
-    - 强制冒险模式（无法破坏/放置方块）
+    - 强制观察者模式（可配置）
     - 限制在出生点范围内活动
-    - 屏幕中央显示倒计时 BossBar
-- 离线期间倒计时继续计算
+    - 屏幕中央显示倒计时 BossBar（可配置）
 - 新玩家首次加入自动获得 **3 次** 立即复活机会（可配置）
 - 死亡时优先消耗次数，有次数则正常复活
 - 次数用尽后进入等待期
 - 数据基于 UUID 存储，玩家改名不影响
-- 击杀特定生物有概率获得复活次数
+- 击杀特定生物有概率获得复活次数（可配置）
 - 支持配置掉落概率和数量
 - **在线时间累计奖励**：玩家每在线一定时间可获得复活次数
   - 默认每 24 小时在线时间可获得 1 次复活机会（可配置）
@@ -31,11 +32,11 @@
 
 ### 环境要求
 
-| 组件 | 最低版本 | 推荐版本 |
-|------|---------|---------|
-| Minecraft | 1.21 | 1.21+ |
-| 服务端核心 | Paper 1.21 | Paper 1.21.3+ |
-| Java | 21 | Java 21 LTS |
+| 组件 | 最低版本        | 推荐版本 |
+|------|-------------|---------|
+| Minecraft | 1.21        | 1.21+ |
+| 服务端核心 | Spigot 1.21 | Paper 1.21.3+ |
+| Java | 21          | Java 21 LTS |
 
 ---
 
@@ -43,15 +44,16 @@
 
 ```yaml
 # HardcoreRespawn 配置文件
-version: 4.0
+version: 4.1
 
 settings:
   # 默认复活次数
   default_respawn_count: 3
 
   # 默认生命值上限
-  default_max_health: 1.0  # 死亡等待时间
+  default_max_health: 1.0
 
+  # 死亡等待时间
   wait_time:
     hours: 24               # 小时
     minutes: 0              # 分钟
@@ -97,10 +99,16 @@ settings:
     - "respawn info"
     - "hardcorerespawn skip"
     - "hardcorerespawn info"
+    - "l"
+    - "login"
+    - "reg"
+    - "register"
 
   # 在线时间累计复活次数设置
   online_time_reward:
     enabled: true                    # 是否启用在线时间奖励
+    offline: false                   # 离线时是否也进行计时
+    reward_counts: 1                  # 每次奖励的次数
     required_time:
       hours: 24               # 小时
       minutes: 0              # 分钟
@@ -118,34 +126,6 @@ rewards:
       count: 1
     PHANTOM:
       chance: 0.2
-
-
-# 消息配置
-messages:
-  respawn_used: "§a你使用了一次复活机会！剩余次数: {count}"
-  death_penalty_started: "§c你已经用完了所有复活机会，将在出生点等待24小时才能复活！"
-  movement_restricted: "§c你正在等待期，不能离开出生点区域！"
-  not_in_waiting_period: "§c你不在等待期！"
-  no_respawn_count: "§c你没有足够的复活次数来跳过等待！"
-  skip_success: "§a成功跳过等待！剩余次数: {count}"
-  waiting_period_ended: "§a你的等待期已结束，现在可以自由行动！"
-  info_respawn_count: "§a复活次数: {count}"
-  info_waiting_time_left: "§c剩余等待时间: {time}"
-  info_not_waiting: "§a你不在等待期"
-  bossbar_title: "§c等待复活 §f{time}"
-  reward_received: "§a你击杀{entity}获得了{count}次复活机会！"
-  data_not_loaded: "§c玩家数据尚未加载完成，请稍后再试！"
-  admin_respawn_count_added: "§a管理员给你增加了{amount}次复活机会！当前总数: {total}"
-  admin_respawn_count_added_console: "§a已给玩家{player}增加{amount}次复活机会，当前总数: {total}"
-  admin_respawn_count_set: "§a管理员将你的复活次数设置为{amount}！"
-  admin_respawn_count_set_console: "§a已将玩家{player}的复活次数设置为{amount}"
-  admin_reset_player: "§a管理员重置了你的等待状态！"
-  admin_reset_player_console: "§a已重置玩家{player}的等待状态"
-  player_not_found: "§c找不到该玩家！"
-  one_heart_applied: "§c一滴血模式已启用！你的最大生命值为0.5颗心"
-  command_blocked: "&c等待期间无法使用此指令！"
-  still_in_waiting_period: "&c你仍在等待期，剩余时间：{time}"
-  bypass_enabled: "&e你拥有指令限制绕过权限"
 ```
 
 ---
