@@ -23,50 +23,50 @@ public class JoinListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
-        // 加载玩家数据
-        plugin.getPlayerDataManager().loadPlayerData(player);
-
         // 检查玩家是否未登录，如果未登录则跳过所有限制
         if (HardcoreRespawn.isPlayerLoggedOut(player)) {
             return;
         }
 
-        // 应用生命值设置
+        // 加载玩家数据（异步）
+        plugin.getPlayerDataManager().loadPlayerData(player);
+
+        // 延迟检查等待期状态，确保数据加载完成
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            // 加载玩家数据后应用生命值设置
+            // 应用生命值设置
             plugin.getPlayerDataManager().applySavedMaxHealth(player);
-        }, 10L);
 
-        // 检查玩家是否在等待期
-        if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
-            Location spawnLocation = player.getWorld().getSpawnLocation();
-            player.teleport(spawnLocation);
+            // 检查玩家是否在等待期
+            if (plugin.getPlayerDataManager().isInWaitingPeriod(player)) {
+                Location spawnLocation = player.getWorld().getSpawnLocation();
+                player.teleport(spawnLocation);
 
-            // 设置为配置的模式
-            int waitTimeMode = plugin.getConfig().getInt("settings.wait_time_mode", 3);
-            switch (waitTimeMode) {
-                case 0:
-                    player.setGameMode(GameMode.SURVIVAL);
-                    break;
-                case 2:
-                    player.setGameMode(GameMode.ADVENTURE);
-                    break;
-                case 3:
-                default:
-                    player.setGameMode(GameMode.SPECTATOR);
-                    break;
+                // 设置为配置的模式
+                int waitTimeMode = plugin.getConfig().getInt("settings.wait_time_mode", 3);
+                switch (waitTimeMode) {
+                    case 0:
+                        player.setGameMode(GameMode.SURVIVAL);
+                        break;
+                    case 2:
+                        player.setGameMode(GameMode.ADVENTURE);
+                        break;
+                    case 3:
+                    default:
+                        player.setGameMode(GameMode.SPECTATOR);
+                        break;
+                }
+
+                plugin.getPlayerDataManager().resumeWaitingPeriod(player);
+
+                player.sendMessage(plugin.getPlayerDataManager().getMessage("still_in_waiting_period")
+                        .replace("{time}", plugin.getPlayerDataManager().getRemainingTimeFormatted(player)));
+            } else {
+                // 不在等待期，强制切回生存
+                player.setGameMode(GameMode.SURVIVAL);
+                // 如果是新玩家，给予初始复活次数
+                plugin.getPlayerDataManager().initializeNewPlayer(player);
             }
-
-            plugin.getPlayerDataManager().resumeWaitingPeriod(player);
-
-            player.sendMessage(plugin.getPlayerDataManager().getMessage("still_in_waiting_period")
-                    .replace("{time}", plugin.getPlayerDataManager().getRemainingTimeFormatted(player)));
-        } else {
-            // 不在等待期，强制切回生存
-            player.setGameMode(GameMode.SURVIVAL);
-            // 如果是新玩家，给予初始复活次数
-            plugin.getPlayerDataManager().initializeNewPlayer(player);
-        }
+        }, 20L);
     }
 
     // 监听世界切换事件，确保切换世界后仍保持一滴血模式

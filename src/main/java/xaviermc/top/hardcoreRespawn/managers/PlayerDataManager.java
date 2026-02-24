@@ -55,6 +55,8 @@ public class PlayerDataManager {
                     } else {
                         // 等待时间未过，恢复等待期
                         resumeWaitingPeriod(player);
+                        // 确保设置正确的等待期游戏模式
+                        setWaitTimeGameMode(player);
                     }
                 }
                 
